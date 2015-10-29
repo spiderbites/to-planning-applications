@@ -2,7 +2,7 @@
 
 This is a project of [Civic Tech Toronto](http://civictech.ca/) looking into [City of Toronto development project applications](http://app.toronto.ca/DevelopmentApplications/mapSearchSetup.do?action=init).
 
-## Usage
+#### Usage
 
 We're currently using Python ~2.7 and the [requests](http://docs.python-requests.org/) package.
 
