@@ -1,4 +1,5 @@
 import re
+import os
 
 def is_key(s):
   return re.search('s\d+', s)
@@ -87,9 +88,12 @@ def get_sorted_value_names(objects):
 
 
 if __name__ == "__main__":
-  FILE = './data/E37'
-  big_list = string_to_list(FILE)
-  keys = get_main_record_keys(big_list[-2])
-  big_list = clean(big_list)
-  pointer_map = build_pointer_map(keys, big_list)
-  objects = build_objects(keys, big_list, pointer_map)
+  for dirpath, _, filenames in os.walk('./data'):
+    for f in filenames:
+      file = os.path.join(dirpath,f)
+      big_list = string_to_list(file)
+      keys = get_main_record_keys(big_list[-2])
+      big_list = clean(big_list)
+      pointer_map = build_pointer_map(keys, big_list)
+      objects = build_objects(keys, big_list, pointer_map)
+      # DO SOMETHING WITH OBJECTS HERE!!!
