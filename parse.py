@@ -1,5 +1,6 @@
 import re
 import os
+import dbcfg
 
 def is_key(s):
   return re.search('s\d+', s)
@@ -86,8 +87,39 @@ def get_sorted_value_names(objects):
   return s
 
 
+def add_row(cursor, tablename, rowdict):
+    # XXX tablename not sanitized
+    # XXX test for allowed keys is case-sensitive
 
-if __name__ == "__main__":
+    # filter out keys that are not column names
+    cursor.execute("describe %s" % tablename)
+    allowed_keys = set(row[0] for row in cursor.fetchall())
+    keys = allowed_keys.intersection(rowdict)
+
+    if len(rowdict) > len(keys):
+        unknown_keys = set(rowdict) - allowed_keys
+        print >> sys.stderr, "skipping keys:", ", ".join(unknown_keys)
+
+    columns = ", ".join(keys)
+    values_template = ", ".join(["%s"] * len(keys))
+
+    sql = "insert into %s (%s) values (%s)" % (
+        tablename, columns, values_template)
+    values = tuple(rowdict[key] for key in keys)
+    cursor.execute(sql, values)
+
+
+def connect():
+  return MySQLdb.connect(host=dbcfg.mysql['host'],
+                       user=dbcfg.mysql['user'], 
+                       passwd=dbcfg.mysql['passwd'],
+                       db=dbcfg.mysql['db'])
+
+
+
+# the main func...
+def build_all_objects():
+  all_objects = []
   for dirpath, _, filenames in os.walk('./data'):
     for f in filenames:
       file = os.path.join(dirpath,f)
@@ -95,5 +127,18 @@ if __name__ == "__main__":
       keys = get_main_record_keys(big_list[-2])
       big_list = clean(big_list)
       pointer_map = build_pointer_map(keys, big_list)
-      objects = build_objects(keys, big_list, pointer_map)
-      # DO SOMETHING WITH OBJECTS HERE!!!
+      all_objects.append(build_objects(keys, big_list, pointer_map))
+  return all_objects
+
+
+if __name__ == "__main__":
+  all_objects = build_all_objects()
+
+  db = connect()
+  cursor = db.cursor()
+  tablename = "parse-new"
+
+  for ward_object in all_objects:
+    for development in ward_object.keys():
+      row = ward_object[development]
+      add_row(cursor, tablename, row)
