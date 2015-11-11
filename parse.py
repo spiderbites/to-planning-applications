@@ -1,6 +1,8 @@
 import re
 import os
 import dbcfg
+import MySQLdb
+import sys
 
 def is_key(s):
   return re.search('s\d+', s)
@@ -41,7 +43,7 @@ def build_objects(keys, big_list, pointer_map):
 
           # even though pointers are nested, for now we only go one level deep
           if outer_key in obj.keys(): 
-            value_name = pointer_map[key][1] + "-" + value_name
+            value_name = pointer_map[key][1] + "_" + value_name
             obj[outer_key][value_name] = value
 
     except ValueError:
@@ -92,18 +94,20 @@ def add_row(cursor, tablename, rowdict):
     # XXX test for allowed keys is case-sensitive
 
     # filter out keys that are not column names
-    cursor.execute("describe %s" % tablename)
-    allowed_keys = set(row[0] for row in cursor.fetchall())
-    keys = allowed_keys.intersection(rowdict)
+    #cursor.execute("describe %s" % tablename)
+    #allowed_keys = set(row[0] for row in cursor.fetchall())
+    #keys = allowed_keys.intersection(rowdict)
 
-    if len(rowdict) > len(keys):
-        unknown_keys = set(rowdict) - allowed_keys
-        print >> sys.stderr, "skipping keys:", ", ".join(unknown_keys)
+    #if len(rowdict) > len(keys):
+    #    unknown_keys = set(rowdict) - allowed_keys
+    #    print >> sys.stderr, "skipping keys:", ", ".join(unknown_keys)
+
+    keys = rowdict.keys()
 
     columns = ", ".join(keys)
     values_template = ", ".join(["%s"] * len(keys))
 
-    sql = "insert into %s (%s) values (%s)" % (
+    sql = "replace into %s (%s) values (%s)" % (
         tablename, columns, values_template)
     values = tuple(rowdict[key] for key in keys)
     cursor.execute(sql, values)
@@ -127,7 +131,8 @@ def build_all_objects():
       keys = get_main_record_keys(big_list[-2])
       big_list = clean(big_list)
       pointer_map = build_pointer_map(keys, big_list)
-      all_objects.append(build_objects(keys, big_list, pointer_map))
+      objects = build_objects(keys, big_list, pointer_map)
+      all_objects.append(objects)
   return all_objects
 
 
@@ -136,9 +141,10 @@ if __name__ == "__main__":
 
   db = connect()
   cursor = db.cursor()
-  tablename = "parse-new"
+  tablename = "parse"
 
-  for ward_object in all_objects:
+for ward_object in all_objects:
     for development in ward_object.keys():
-      row = ward_object[development]
-      add_row(cursor, tablename, row)
+        row = ward_object[development]
+        add_row(cursor, tablename, row)
+        db.commit()
