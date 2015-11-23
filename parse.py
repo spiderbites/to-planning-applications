@@ -5,7 +5,6 @@ import MySQLdb
 import sys
 import traceback
 
-
 ##################################
 # PUTTING DATA INTO DICTIONARIES #
 ##################################
@@ -92,7 +91,6 @@ def build_objects(keys, big_list, pointer_map):
     except ValueError:
       pass
 
-  print obj
   return obj  
 
 
@@ -154,7 +152,6 @@ def try_int_conversion(val):
   except (ValueError, AttributeError):
     return val
 
-
 ########
 # MAIN #
 ########
@@ -166,7 +163,7 @@ if __name__ == "__main__":
   cursor = db.cursor()
   tablename = "parse"
 
-  for ward_object in all_objects:
+for ward_object in all_objects:
     for development in ward_object.keys():
       row = ward_object[development]
       row = {k: null_empty_str_to_none(v) for k,v in row.iteritems()}
@@ -180,6 +177,4 @@ if __name__ == "__main__":
         print row
         sys.exit(0)
 
-  db.commit()
-
-
+db.commit()
