@@ -1,19 +1,64 @@
 import re
 import os
 import dbcfg
+import MySQLdb
+import sys
+import traceback
 
-def is_key(s):
-  return re.search('s\d+', s)
+
+##################################
+# PUTTING DATA INTO DICTIONARIES #
+##################################
+
+# entry point
+def build_all_objects():
+  all_objects = []
+  for dirpath, _, filenames in os.walk('./data'):
+    for f in filenames:
+      file = os.path.join(dirpath,f)
+      big_list = string_to_list(file)
+      keys = get_main_record_keys(big_list[-2])
+      big_list = clean(big_list)
+      pointer_map = build_pointer_map(keys, big_list)
+      all_objects.append(build_objects(keys, big_list, pointer_map))
+  return all_objects
 
 def string_to_list(file):
   return open(file).read().split(";")
 
-# return a list of all the 'outer keys', found at the end of the data files
+def is_key(s):
+  return re.search('s\d+', s)
+
 def get_main_record_keys(s):
+  '''Return a list of all the "outer keys", found at the end of the data files'''
   return s[s.index('[') + 1 : -2].split(',')
 
-# return a dict...
+def clean(big_list):
+  return map(str.strip, big_list)[:-2] # we don't need the last two items in the file
+
+def build_pointer_map(keys, big_list):
+  '''
+  Here we're looking for entries where the values are pointers, i.e. s0.proposal=s33
+  Return a dict that takes the form {key : [pointer, name]} i.e. {'s0' : ['s33','proposal' ]}
+  '''
+  pointer_map = {}
+  for item in big_list:
+    try:
+      key_name, pointer = item.split('=')
+      key, name = key_name.split('.')
+      if is_key(key) and is_key(pointer):
+        pointer_map[pointer] = [key, name]
+    except ValueError:
+      pass    
+  return pointer_map
+
 def build_objects(keys, big_list, pointer_map):
+  '''
+  Main processing function for each data file that contains developments for a single ward.
+  Return a dictionary of dictionaries, where each inner dictionary contains the information
+  for a single development.  Development data can be 'nested' within the data files. Currently
+  this goes one nesting level deep when creating development objects.
+  '''
   obj = {}
   for key in keys:
     obj[key] = {}
@@ -41,35 +86,21 @@ def build_objects(keys, big_list, pointer_map):
 
           # even though pointers are nested, for now we only go one level deep
           if outer_key in obj.keys(): 
-            value_name = pointer_map[key][1] + "-" + value_name
+            value_name = pointer_map[key][1] + "_" + value_name
             obj[outer_key][value_name] = value
 
     except ValueError:
       pass
 
+  print obj
   return obj  
 
 
-def build_pointer_map(keys, big_list):
-  '''
-  Here we're looking for entries where the values are pointers, i.e. s0.proposal=s33
-  Return a dict that takes the form {key : [pointer, name]} i.e. {'s0' : ['s33','proposal' ]}
-  '''
-  pointer_map = {}
-  for item in big_list:
-    try:
-      key_name, pointer = item.split('=')
-      key, name = key_name.split('.')
-      if is_key(key) and is_key(pointer):
-        pointer_map[pointer] = [key, name]
-    except ValueError:
-      pass    
-  return pointer_map
 
-def clean(big_list):
-  return map(str.strip, big_list)[:-2] # we don't need the last two items in the file
+#########################
+# CONVENIENCE FUNCTIONS #
+#########################
    
-
 def print_objects(objects):
   for key in objects:
     print key
@@ -87,27 +118,10 @@ def get_sorted_value_names(objects):
   return s
 
 
-def add_row(cursor, tablename, rowdict):
-    # XXX tablename not sanitized
-    # XXX test for allowed keys is case-sensitive
 
-    # filter out keys that are not column names
-    cursor.execute("describe %s" % tablename)
-    allowed_keys = set(row[0] for row in cursor.fetchall())
-    keys = allowed_keys.intersection(rowdict)
-
-    if len(rowdict) > len(keys):
-        unknown_keys = set(rowdict) - allowed_keys
-        print >> sys.stderr, "skipping keys:", ", ".join(unknown_keys)
-
-    columns = ", ".join(keys)
-    values_template = ", ".join(["%s"] * len(keys))
-
-    sql = "insert into %s (%s) values (%s)" % (
-        tablename, columns, values_template)
-    values = tuple(rowdict[key] for key in keys)
-    cursor.execute(sql, values)
-
+################
+# DB FUNCTIONS #
+################
 
 def connect():
   return MySQLdb.connect(host=dbcfg.mysql['host'],
@@ -115,30 +129,57 @@ def connect():
                        passwd=dbcfg.mysql['passwd'],
                        db=dbcfg.mysql['db'])
 
+def add_row(cursor, tablename, rowdict):
+    keys = ", ".join(rowdict.keys())
+    values_template = ", ".join(["%s"] * len(rowdict))
+
+    sql = "insert into %s (%s) values (%s)" % (
+       tablename, keys, values_template)
+    values = tuple(rowdict[key] for key in rowdict)
+    cursor.execute(sql, values)
 
 
-# the main func...
-def build_all_objects():
-  all_objects = []
-  for dirpath, _, filenames in os.walk('./data'):
-    for f in filenames:
-      file = os.path.join(dirpath,f)
-      big_list = string_to_list(file)
-      keys = get_main_record_keys(big_list[-2])
-      big_list = clean(big_list)
-      pointer_map = build_pointer_map(keys, big_list)
-      all_objects.append(build_objects(keys, big_list, pointer_map))
-  return all_objects
 
+##################
+# DATA CLEANSING #
+##################
+
+def null_empty_str_to_none(val):
+  return None if val == "null" or val == '' else val
+
+def try_int_conversion(val):
+  try:
+    int_val = int(val.replace(',', ''))
+    return int_val
+  except (ValueError, AttributeError):
+    return val
+
+
+########
+# MAIN #
+########
 
 if __name__ == "__main__":
   all_objects = build_all_objects()
 
   db = connect()
   cursor = db.cursor()
-  tablename = "parse-new"
+  tablename = "parse"
 
   for ward_object in all_objects:
     for development in ward_object.keys():
       row = ward_object[development]
-      add_row(cursor, tablename, row)
+      row = {k: null_empty_str_to_none(v) for k,v in row.iteritems()}
+      row = {k: try_int_conversion(v) for k,v in row.iteritems()}
+      try:
+        add_row(cursor, tablename, row)
+      except:
+        e = sys.exc_info()[0]
+        print e
+        traceback.print_exc()
+        print row
+        sys.exit(0)
+
+  db.commit()
+
+
