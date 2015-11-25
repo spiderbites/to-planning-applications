@@ -19,7 +19,16 @@ def build_all_objects():
       keys = get_main_record_keys(big_list[-2])
       big_list = clean(big_list)
       pointer_map = build_pointer_map(keys, big_list)
-      all_objects.append(build_objects(keys, big_list, pointer_map))
+      
+      ward_results = build_objects(keys, big_list, pointer_map)
+
+      # add the ward queried to get this result to the actual data
+      ward_int = int(f[1:])
+      for development in ward_results:
+        ward_results[development]["ward_queried"] = ward_int
+      
+      # add to the all_objects array
+      all_objects.append(ward_results)
   return all_objects
 
 def string_to_list(file):
@@ -57,6 +66,9 @@ def build_objects(keys, big_list, pointer_map):
   Return a dictionary of dictionaries, where each inner dictionary contains the information
   for a single development.  Development data can be 'nested' within the data files. Currently
   this goes one nesting level deep when creating development objects.
+
+  big_list is a list of all the key-value pairs that comes straight from the data files.  each
+  element of the list is actually a string at this point that gets split below...
   '''
   obj = {}
   for key in keys:
@@ -131,7 +143,7 @@ def add_row(cursor, tablename, rowdict):
     keys = ", ".join(rowdict.keys())
     values_template = ", ".join(["%s"] * len(rowdict))
 
-    sql = "insert into %s (%s) values (%s)" % (
+    sql = "replace into %s (%s) values (%s)" % (
        tablename, keys, values_template)
     values = tuple(rowdict[key] for key in rowdict)
     cursor.execute(sql, values)
@@ -145,12 +157,16 @@ def add_row(cursor, tablename, rowdict):
 def null_empty_str_to_none(val):
   return None if val == "null" or val == '' else val
 
-def try_int_conversion(val):
-  try:
-    int_val = int(val.replace(',', ''))
-    return int_val
-  except (ValueError, AttributeError):
+# very hacky for now, we don't want folder fields to be converted to ints
+def try_int_conversion(key, val):
+  if key.startswith("folder"):
     return val
+  else:
+    try:
+      int_val = int(val.replace(',', ''))
+      return int_val
+    except (ValueError, AttributeError):
+      return val
 
 ########
 # MAIN #
@@ -163,11 +179,11 @@ if __name__ == "__main__":
   cursor = db.cursor()
   tablename = "parse"
 
-for ward_object in all_objects:
+  for ward_object in all_objects:
     for development in ward_object.keys():
       row = ward_object[development]
       row = {k: null_empty_str_to_none(v) for k,v in row.iteritems()}
-      row = {k: try_int_conversion(v) for k,v in row.iteritems()}
+      row = {k: try_int_conversion(k,v) for k,v in row.iteritems()}
       try:
         add_row(cursor, tablename, row)
       except:
@@ -177,4 +193,4 @@ for ward_object in all_objects:
         print row
         sys.exit(0)
 
-db.commit()
+  db.commit()
