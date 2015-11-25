@@ -1,7 +1,9 @@
 import requests
 import sys
+import os
 
-out_dir = './data/'
+DATA_DIR = 'data'
+DATA_PATH = os.path.join(os.path.dirname(os.path.realpath(__file__)), DATA_DIR)
 
 wardcodes = ["W01","W02","W03","W04","W05","W06","W07","N08","N09","N10","W11",
              "W12","W13","S14","N15","N16","W17","S18","S19","S20","S21","S22",
@@ -38,7 +40,8 @@ payload = {
 }
 
 def ward_request(wardcode):
-  f = open(out_dir + wardcode, 'w')
+
+  f = open(os.path.join(DATA_PATH, wardcode), 'w')
 
   # add the desired wardcode to the payload
   payload["c0-param1"] = "string:" + wardcode

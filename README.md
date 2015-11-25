@@ -21,3 +21,7 @@ Create a mysql db.  Change the info in the `dbcfg-sample.py` for your installati
 `pip install MySQL-python`
 
 `python parse.py`
+
+Or run both those things together with
+
+`python run.py`

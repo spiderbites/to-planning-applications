@@ -7,6 +7,8 @@ import traceback
 
 
 TABLENAME = "parse"
+DATA_DIR = 'data'
+DATA_PATH = os.path.join(os.path.dirname(os.path.realpath(__file__)), DATA_DIR)
 
 ##################################
 # PUTTING DATA INTO DICTIONARIES #
@@ -15,7 +17,7 @@ TABLENAME = "parse"
 # entry point
 def build_all_objects():
   all_objects = []
-  for dirpath, _, filenames in os.walk('./data'):
+  for dirpath, _, filenames in os.walk(DATA_PATH):
     for f in filenames:
       file = os.path.join(dirpath,f)
       big_list = string_to_list(file)
