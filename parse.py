@@ -5,6 +5,9 @@ import MySQLdb
 import sys
 import traceback
 
+
+TABLENAME = "parse"
+
 ##################################
 # PUTTING DATA INTO DICTIONARIES #
 ##################################
@@ -172,13 +175,15 @@ def try_int_conversion(key, val):
 # MAIN #
 ########
 
-if __name__ == "__main__":
+def run():
+  print('parsing...')
   all_objects = build_all_objects()
 
   db = connect()
   cursor = db.cursor()
-  tablename = "parse"
+  tablename = TABLENAME
 
+  print('inserting into db...')
   for ward_object in all_objects:
     for development in ward_object.keys():
       row = ward_object[development]
@@ -194,3 +199,6 @@ if __name__ == "__main__":
         sys.exit(0)
 
   db.commit()
+
+if __name__ == "__main__":
+  run()

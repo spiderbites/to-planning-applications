@@ -31,7 +31,7 @@ SET time_zone = "+00:00";
 DROP TABLE IF EXISTS `parse`;
 
 CREATE TABLE IF NOT EXISTS `parse` (
-  `folderYear` int(11),
+  `folderYear` varchar(10),
   `folderSequence` varchar(10),
   `folderSection` varchar(10),
   `folderRevision` varchar(10),
@@ -127,10 +127,10 @@ CREATE TABLE IF NOT EXISTS `parse` (
   `propertyView_propertyRoll` varchar(100),
   `propertyView_house` varchar(100),
   `ward_queried` int(11)
-
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 ALTER TABLE  `parse` ADD PRIMARY KEY (  `folderYear` ,  `folderSequence` ,  `folderSection` ,  `folderRevision` ,  `folderType` );
+ALTER TABLE `parse` ADD `lastUpdated` TIMESTAMP ON UPDATE CURRENT_TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
 /*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;

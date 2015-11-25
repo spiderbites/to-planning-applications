@@ -58,6 +58,9 @@ def ward_request(wardcode):
   print "done!"
 
 
-if __name__ == "__main__":
+def run():
   for ward in wardcodes:
     ward_request(ward)
+
+if __name__ == "__main__":
+  run()
