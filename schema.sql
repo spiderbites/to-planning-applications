@@ -125,9 +125,12 @@ CREATE TABLE IF NOT EXISTS `parse` (
   `propertyView_region` varchar(100),
   `propertyView_legalDesc` varchar(200),
   `propertyView_propertyRoll` varchar(100),
-  `propertyView_house` varchar(100)
+  `propertyView_house` varchar(100),
+  `ward_queried` int(11)
 
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+
+ALTER TABLE  `parse` ADD PRIMARY KEY (  `folderYear` ,  `folderSequence` ,  `folderSection` ,  `folderRevision` ,  `folderType` );
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
 /*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
