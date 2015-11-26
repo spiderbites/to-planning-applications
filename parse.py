@@ -5,7 +5,6 @@ import MySQLdb
 import sys
 import traceback
 
-
 TABLENAME = "parse"
 DATA_DIR = 'data'
 DATA_PATH = os.path.join(os.path.dirname(os.path.realpath(__file__)), DATA_DIR)
@@ -148,10 +147,14 @@ def add_row(cursor, tablename, rowdict):
     keys = ", ".join(rowdict.keys())
     values_template = ", ".join(["%s"] * len(rowdict))
 
-    sql = "replace into %s (%s) values (%s)" % (
-       tablename, keys, values_template)
+    keys_and_values_template_for_update = ', '.join('%s=%s' % z for z in zip(rowdict.keys(), ["%s"] * len(rowdict)))
+
+    sql = ('INSERT INTO %s (%s) VALUES (%s) '
+           'ON DUPLICATE KEY '
+           'UPDATE %s') % (tablename, keys, values_template, keys_and_values_template_for_update)
+    
     values = tuple(rowdict[key] for key in rowdict)
-    cursor.execute(sql, values)
+    cursor.execute(sql, values*2)
 
 
 
