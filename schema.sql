@@ -2,7 +2,7 @@ SET SQL_MODE="NO_AUTO_VALUE_ON_ZERO";
 SET time_zone = "+00:00";
 
 DROP TABLE IF EXISTS `parse`;
-CREATE TABLE `parsetest` (
+CREATE TABLE `parse` (
   `folderYear` varchar(10) NOT NULL,
   `folderSequence` varchar(10) NOT NULL,
   `folderSection` varchar(10) NOT NULL,
