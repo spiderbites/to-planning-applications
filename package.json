@@ -1,0 +1,27 @@
+{
+  "name": "to-planning-applications",
+  "version": "1.0.0",
+  "description": "This is a project of [Civic Tech Toronto](http://civictech.ca/) looking into [City of Toronto development project applications](http://app.toronto.ca/DevelopmentApplications/mapSearchSetup.do?action=init).",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/spiderbites/to-planning-applications.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/spiderbites/to-planning-applications/issues"
+  },
+  "homepage": "https://github.com/spiderbites/to-planning-applications#readme",
+  "dependencies": {
+    "async": "^1.5.2",
+    "eval": "^0.1.1",
+    "lodash": "^4.5.1",
+    "mongodb": "^2.1.7",
+    "querystring": "^0.2.0",
+    "request": "^2.69.0"
+  }
+}
